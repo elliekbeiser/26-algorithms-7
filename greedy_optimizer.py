@@ -51,6 +51,7 @@ def maximize_deliveries(time_windows):
             last_end_time = window['end']
 
     return selected
+
 # ============================================================================
 # PART 2: TRUCK LOADING (Fractional Knapsack)
 # ============================================================================
