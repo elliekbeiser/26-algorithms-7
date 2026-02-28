@@ -37,9 +37,20 @@ def maximize_deliveries(time_windows):
     # Hint: What greedy choice gives you the most room for future deliveries?
     # Hint: Think about sorting by a specific attribute
     
-    pass  # Delete this and write your code
+    # sort by end time using ['end'] because this is a dict
+    slotted_time_windows = sorted(time_windows, key=lambda x: x['end'])
 
+    # select first time slot that ends the earliest
+    selected = [slotted_time_windows[0]]
+    last_end_time = slotted_time_windows[0]['end']
 
+    for window in slotted_time_windows[1:]:
+        # if it starts AFTER the last selected time window ended
+        if window['start'] >= last_end_time:
+            selected.append(window)
+            last_end_time = window['end']
+
+    return selected
 # ============================================================================
 # PART 2: TRUCK LOADING (Fractional Knapsack)
 # ============================================================================
@@ -76,7 +87,36 @@ def optimize_truck_load(packages, weight_limit):
     # Hint: What ratio determines which packages are most valuable per pound?
     # Hint: You can take fractions - if you have 5 lbs capacity left and a 10 lb package, take 0.5 of it
     
-    pass  # Delete this and write your code
+    packages_w_ratio = []
+    for package in packages:
+        ratio = package['priority'] / package['weight']
+        packages_w_ratio.append((package, ratio))
+
+    # sort with highest prioirty per weight
+    sorted_packages = sorted(packages_w_ratio, key=lambda x: x[1], reverse=True)
+
+    # greedy implementation
+    total_value = 0.0
+    total_weight = 0.0
+    selected = []
+
+    for package, ratio in sorted_packages:
+        if total_weight + package['weight'] <= weight_limit:
+            # take package
+            selected.append({'package_id': package['package_id'],'fraction': 1.0})
+            total_value += package['priority']
+            total_weight += package['weight']
+        else:
+            # take what fits
+            remaining = weight_limit - total_weight
+            fraction = remaining / package['weight']
+            if fraction > 0:
+                selected.append({'package_id': package['package_id'],'fraction': fraction})
+                total_value += package['priority'] * fraction
+                total_weight += remaining
+            break # full
+
+    return {'total_priority': total_value, 'total_weight': total_weight, 'packages': selected}
 
 
 # ============================================================================
@@ -112,7 +152,31 @@ def minimize_drivers(deliveries):
     # Hint: How do you know if a delivery overlaps with another?
     # Hint: Can you assign a delivery to an existing driver, or do you need a new one?
     
-    pass  # Delete this and write your code
+    # sort by earliest time first
+    sorted_deliveries = sorted(deliveries, key=lambda x: x['start'])
+
+    # track when driver becomes available
+    driver_end_times = []
+    schedules = []
+
+    for delivery in sorted_deliveries:
+ 
+        scheduled = False
+
+        for time, driver_end_time in enumerate(driver_end_times):
+            if delivery['start'] >= driver_end_time:
+                driver_end_times[time] = delivery['end']
+                schedules[time].append(delivery['delivery_id'])
+                scheduled = True
+                break
+        
+        # no driver avaiable
+        if not scheduled:
+            driver_end_times.append(delivery['end'])
+            schedules.append([delivery['delivery_id']])
+
+    return {'num_drivers': len(schedules),'assignments': schedules}
+
 
 
 # ============================================================================
@@ -297,9 +361,9 @@ if __name__ == "__main__":
     
     # Uncomment these as you complete each part:
     
-    # test_package_prioritization()
-    # test_truck_loading()
-    # test_driver_assignment()
-    # benchmark_scenarios()
+    test_package_prioritization()
+    test_truck_loading()
+    test_driver_assignment()
+    benchmark_scenarios()
     
     print("\n⚠ Uncomment the test functions in the main block to run tests!")
